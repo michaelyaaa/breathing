@@ -1,0 +1,353 @@
+<html>
+    <head>
+        <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0">
+        <style>
+            .wrapper {
+                text-align: center; 
+                margin-top: 60px; 
+                display: none; 
+                justify-content: center; 
+                align-items: center
+            }
+
+            #round {
+                font-size: 35px;                
+            }
+
+            .bubble {
+                user-select: none;
+                /* background-color: bisque;  */
+                border-radius: 50%; 
+                transition: all ease-in-out 1.5s; 
+                font-size: 0px; 
+                width: 0px; 
+                height: 0px; 
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                position: fixed; 
+                top: 40%; 
+                left: 50%;
+                border: 7px solid #ffdf77;
+            }
+
+            .retention {
+                user-select: none;
+                display: none; 
+                background-color: #f7d49c; 
+                border-radius: 50%; 
+                transition: all ease-in-out 1.5s; 
+                font-size: 40px;
+                width: 160px; 
+                height: 160px; 
+                justify-content: center; 
+                align-items: center; 
+                position: fixed; 
+                top: 40%; 
+                left: 50%; 
+                margin-left: -80px; 
+                margin-top: -80px;
+                border: 7px solid #FFC107;
+            }
+
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0; 
+                width:100vw; 
+                height: 75vh; 
+                background-color: aliceblue; 
+                opacity: 0.2; 
+                z-index: 1;
+            }
+
+            .summary {
+                display: none;
+                flex-direction: column;
+                width: fit-content;
+                margin-left: auto;
+                margin-right: auto;
+                margin-top: 50px;
+                font-size: 22px;
+                line-height: 1.5;
+                border: 1px solid grey;
+                background-color: #ffbc6f;
+                padding: 20px 50px;
+                border-radius: 5px;
+                white-space: pre;
+            }
+
+            #welcome {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+                z-index: 2;
+                margin-top:60px;
+            }
+
+            button {
+                width: 120px;
+                height: 50px;
+                margin-left: auto;
+                margin-right: auto;
+                margin-top: 60px;
+                background-color: #6c81ff;
+                border: 1px solid lightblue;
+                border-radius: 3px;
+                color: white;
+                font-size: 18px;
+            }
+
+            #sounds {
+                margin-top: 20px;
+            }
+
+            #music {
+                margin-top: 50vh;
+            }
+
+            .music {
+                width: 90%;
+                margin-left: 5%;
+                margin-right: 5%;
+                margin-bottom: 15px;
+            }
+        </style>
+    </head>
+    <body>
+        <audio id="gong" src="gong.mp3" preload="auto"></audio>
+        <audio id="ding" src="ding.mp3" preload="auto"></audio>
+        <div id="welcome">
+            <div id="round">
+                Welcome, Start whenever you're ready.                
+            </div>
+            <div id="sounds">
+                <input type="checkbox" id="soundsCheckbox" name="sounds" value="Enable Sounds">
+                <label for="sounds"> Enable Sounds</label><br>
+            </div>
+            <button onclick="start()">
+                Start
+            </button>
+            <p>When ready, tap for moving on to retention.
+                Double tap anytime to finish.
+                Scroll down for suggested music.
+            </p>
+        </div>
+        <div id="wrapper" class="wrapper">
+            <div id="round">
+                Round 1
+            </div>
+            <div id="bubble" class="bubble">
+                0
+            </div>
+            <div id="retention" class="retention">
+                0
+            </div>
+        </div>
+        <div id="summary" class="summary">
+        </div>
+        <div onclick="clickOverlay(event)" ondblclick="finish(event)" ontouchend="dblTapCheck(event)" id="overlay" class="overlay">
+        </div>
+        <div id="music">
+            <iframe class="music" src="https://www.youtube.com/embed/qCCodnXlsso" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <iframe class="music" src="https://www.youtube.com/embed/ivCOrc1HWxI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <iframe class="music" src="https://www.youtube.com/embed/y9ZHNhQA_Ac" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+    </body>
+    <script>
+        // 0 - welcome, 1 - breathing, 2 - retention, 3 - end
+        let phase = 0;
+        let breathEmpty = false;
+        let breaths = 1;        
+        let retentionTime = 15;
+        let breathCb;
+        let retentionCb;
+        let recoveryCb;
+        let round = 1;
+        let retentions = [];
+        let tapTimeout;
+        let lastTap = 0;
+        let sounds = false;
+
+        const clickOverlay = () => {
+            switch(phase)
+            {
+                case 1:
+                    breathToRetention();
+                    break;
+                case 2:
+                    retentionToRecovery();
+                    break;
+                case 3:
+                    recoveryToBreath();
+                    break;
+                case 4:
+                    break;
+            }
+        }
+
+        const dblTapCheck = (event) => {
+            var currentTime = new Date().getTime();
+            var tapLength = currentTime - lastTap;
+            clearTimeout(tapTimeout);
+            if (tapLength < 500 && tapLength > 0) {
+                finish(event);
+                event.preventDefault();
+            } else {
+                tapTimeout = setTimeout(function() {
+                    clearTimeout(tapTimeout);
+                }, 500);
+            }
+            lastTap = currentTime;
+        }
+
+        const start = () => {
+            document.getElementById("welcome").style.display = "none";
+            document.getElementById("wrapper").style.display = "flex";
+            document.getElementById("overlay").style.display = "block";            
+            sounds = document.getElementById("soundsCheckbox").checked;
+            
+            if (sounds)
+                document.getElementById("gong").play();
+
+            phase = 1;
+            breath();
+        }
+        
+        const finish = (e) => {
+            e.preventDefault();
+
+            if (phase === 1) {
+                clearTimeout(breathCb);
+                document.getElementById("bubble").style.display = "none";
+            }
+            else if (phase === 2) {
+                clearTimeout(retentionCb);
+                document.getElementById("retention").style.display = "none";
+            }
+            else if (phase === 3) {
+                clearTimeout(recoveryCb);
+                document.getElementById("retention").style.display = "none";
+            }
+            
+            phase = 4;
+            document.getElementById("round").innerText = "Amazing breathing, here is your summary";
+            const summary = document.getElementById("summary");
+            summary.style.display = "flex";
+
+            for (let i = 0; i <= retentions.length; i++) {
+                if (retentions[i]) {
+                    let result = document.createElement("div");
+                    result.innerText = "Round " + (i + 1) + "   " + timeToString(retentions[i]);
+                    summary.appendChild(result); 
+                }
+            }
+        }        
+
+        const breathToRetention = () => {
+            phase = 2;
+            retentionTime = 0;
+            clearTimeout(breathCb);
+            const bubble = document.getElementById("bubble");
+            bubble.style.display = "none";
+            document.getElementById("retention").style.display = "flex";
+            bubble.style.transition = "none";
+            bubble.style.width = bubble.style.height = bubble.style.marginTop = bubble.style.marginLeft = "0";
+            retention();
+        }
+
+        const retentionToRecovery = () => {
+            phase = 3;
+            retentions.push(retentionTime);            console.log(retentions);
+
+            retentionTime = 15;
+            clearTimeout(retentionCb);
+            recovery();
+        }
+
+        const recoveryToBreath = () => {
+            phase = 1;
+            breaths = 1;
+            breathEmpty = false;
+            const bubble = document.getElementById("bubble");
+            clearTimeout(retentionCb);
+            document.getElementById("retention").style.display = "none";
+            document.getElementById("bubble").style.display = "flex";
+            document.getElementById("round").innerText = "Round " + ++round;
+            breath();
+        }
+
+        const retention = () => {
+            if (phase != 2)
+                return;
+        
+            const elem = document.getElementById("retention");
+
+            if (retentionTime != 0 && retentionTime % 60 == 0 && sounds)
+                document.getElementById("ding").play();
+
+            elem.innerText = timeToString(retentionTime++);
+
+            retentionCb = setTimeout(retention, 1000);
+        }
+
+        const recovery = () => {
+            if (phase != 3)
+                return;
+        
+            if (retentionTime === 0)
+            {
+                recoveryToBreath();
+                return;
+            }
+
+            const elem = document.getElementById("retention");
+            
+            elem.innerText = retentionTime--;
+
+            retentionCb = setTimeout(recovery, 1000);
+        }
+
+        const timeToString = time => {
+            function str_pad_left(string,pad,length) {
+                return (new Array(length+1).join(pad)+string).slice(-length);
+            }
+
+            var minutes = Math.floor(time / 60);
+            var seconds = time - minutes * 60;
+
+            return minutes +':'+str_pad_left(seconds,'0',2);
+        }
+
+        const breath = () => {
+            if (phase != 1)
+                return;
+
+            if (breaths === 55)
+            {
+                breathToRetention();
+                return;
+            }
+
+            breathEmpty = !breathEmpty;
+
+            const bubble = document.getElementById("bubble");
+            
+            if (breathEmpty)
+                bubble.innerText = breaths++;
+
+            bubble.style.transition = "all ease-in-out " + (breathEmpty ? "2s" : "1.3s");
+
+            breathCb = setTimeout(() => {
+                bubble.style.width = breathEmpty ? "160px" : "0";
+                bubble.style.height = breathEmpty ? "160px" : "0";
+                bubble.style.marginLeft = breathEmpty ? "-80px" : "0";
+                bubble.style.marginTop = breathEmpty ? "-80px" : "0";
+                bubble.style.fontSize = breathEmpty ? "40px" : "0";
+            }, 0);
+            
+            breathCb = setTimeout(breath, breathEmpty ? 2000 : 1300);
+        }
+    </script>
+</html>
