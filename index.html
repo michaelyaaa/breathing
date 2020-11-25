@@ -1,17 +1,33 @@
 <html>
     <head>
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
         <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0">
         <style>
+            html {
+                font-family: 'Open Sans', sans-serif;
+            }
+            
             .wrapper {
                 text-align: center; 
                 margin-top: 60px; 
                 display: none; 
+                flex-direction: column;
                 justify-content: center; 
                 align-items: center
             }
 
+            #phase {
+                margin-top: 20px;
+                font-size: large;
+            }
+
             #round {
                 font-size: 35px;                
+            }
+
+            #welcomeMsg {
+                font-size: 28px;
             }
 
             .bubble {
@@ -104,7 +120,7 @@
             }
 
             #music {
-                margin-top: 50vh;
+                margin-top: 90vh;
             }
 
             .music {
@@ -119,11 +135,11 @@
         <audio id="gong" src="gong.mp3" preload="auto"></audio>
         <audio id="ding" src="ding.mp3" preload="auto"></audio>
         <div id="welcome">
-            <div id="round">
-                Welcome, Start whenever you're ready.                
+            <div id="welcomeMsg">
+                Welcome, Start whenever you're ready.
             </div>
             <div id="sounds">
-                <input type="checkbox" id="soundsCheckbox" name="sounds" value="Enable Sounds">
+                <input type="checkbox" id="soundsCheckbox" name="sounds" value="Enable Sounds" checked="true">
                 <label for="sounds"> Enable Sounds</label><br>
             </div>
             <button onclick="start()">
@@ -137,6 +153,9 @@
         <div id="wrapper" class="wrapper">
             <div id="round">
                 Round 1
+            </div>
+            <div id="phase">
+                
             </div>
             <div id="bubble" class="bubble">
                 0
@@ -180,7 +199,7 @@
                     retentionToRecovery();
                     break;
                 case 3:
-                    recoveryToBreath();
+                    // recoveryToBreath();
                     break;
                 case 4:
                     break;
@@ -206,6 +225,7 @@
             document.getElementById("welcome").style.display = "none";
             document.getElementById("wrapper").style.display = "flex";
             document.getElementById("overlay").style.display = "block";            
+            document.getElementById("phase").innerText = "Breathing...";
             sounds = document.getElementById("soundsCheckbox").checked;
             
             if (sounds)
@@ -233,6 +253,8 @@
             
             phase = 4;
             document.getElementById("round").innerText = "Amazing breathing, here is your summary";
+            document.getElementById("phase").innerText = "";
+
             const summary = document.getElementById("summary");
             summary.style.display = "flex";
 
@@ -250,6 +272,7 @@
             retentionTime = 0;
             clearTimeout(breathCb);
             const bubble = document.getElementById("bubble");
+            document.getElementById("phase").innerText = "Exhale and hold";
             bubble.style.display = "none";
             document.getElementById("retention").style.display = "flex";
             bubble.style.transition = "none";
@@ -260,7 +283,7 @@
         const retentionToRecovery = () => {
             phase = 3;
             retentions.push(retentionTime);            console.log(retentions);
-
+            document.getElementById("phase").innerText = "Inhale and Hold";
             retentionTime = 15;
             clearTimeout(retentionCb);
             recovery();
@@ -270,6 +293,7 @@
             phase = 1;
             breaths = 1;
             breathEmpty = false;
+            document.getElementById("phase").innerText = "Breathing...";
             const bubble = document.getElementById("bubble");
             clearTimeout(retentionCb);
             document.getElementById("retention").style.display = "none";
