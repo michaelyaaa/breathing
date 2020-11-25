@@ -1,5 +1,6 @@
 <html>
     <head>
+        <title>WHM Breathing Exercise</title>
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
         <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0">
@@ -136,7 +137,7 @@
         <audio id="ding" src="ding.mp3" preload="auto"></audio>
         <div id="welcome">
             <div id="welcomeMsg">
-                Welcome, Start whenever you're ready.
+                Welcome, Start whenever you're ready
             </div>
             <div id="sounds">
                 <input type="checkbox" id="soundsCheckbox" name="sounds" value="Enable Sounds" checked="true">
@@ -145,7 +146,7 @@
             <button onclick="start()">
                 Start
             </button>
-            <p>When ready, tap for moving on to retention.
+            <p>Start breathing, when ready, tap for moving on to retention.
                 Double tap anytime to finish.
                 Scroll down for suggested music.
             </p>
@@ -193,7 +194,8 @@
             switch(phase)
             {
                 case 1:
-                    breathToRetention();
+                    if (breaths >= 10)
+                        breathToRetention();
                     break;
                 case 2:
                     retentionToRecovery();
