@@ -33,7 +33,6 @@
 
             .bubble {
                 user-select: none;
-                /* background-color: bisque;  */
                 border-radius: 50%; 
                 transition: all ease-in-out 1.5s; 
                 font-size: 0px; 
@@ -42,10 +41,18 @@
                 display: flex; 
                 justify-content: center; 
                 align-items: center; 
-                position: fixed; 
                 top: 40%; 
                 left: 50%;
                 border: 7px solid #ffdf77;
+            }
+
+            #bubbleWrapper {
+                display: flex;
+                width: 200px; 
+                height: 200px; 
+                justify-content: center; 
+                align-items: center; 
+                margin-top: 25px;
             }
 
             .retention {
@@ -116,7 +123,8 @@
                 font-size: 18px;
             }
 
-            #sounds {
+            #sounds,
+            #speed {
                 margin-top: 20px;
             }
 
@@ -143,6 +151,14 @@
                 <input type="checkbox" id="soundsCheckbox" name="sounds" value="Enable Sounds" checked="true">
                 <label for="sounds"> Enable Sounds</label><br>
             </div>
+            <div id="speed">
+                <input type="radio" id="slow" name="speed" value="slow">
+                <label for="slow">Slow</label><br>
+                <input type="radio" id="medium" name="speed" value="medium" checked>
+                <label for="medium">Medium</label><br>
+                <input type="radio" id="fast" name="speed" value="fast">
+                <label for="fast">Fast</label>
+            </div>
             <button onclick="start()">
                 Start
             </button>
@@ -158,11 +174,13 @@
             <div id="phase">
                 
             </div>
-            <div id="bubble" class="bubble">
-                0
-            </div>
-            <div id="retention" class="retention">
-                0
+            <div id="bubbleWrapper">
+                <div id="bubble" class="bubble">
+                    0
+                </div>
+                <div id="retention" class="retention">
+                    0
+                </div>
             </div>
         </div>
         <div id="summary" class="summary">
@@ -170,9 +188,9 @@
         <div onclick="clickOverlay(event)" ondblclick="finish(event)" ontouchend="dblTapCheck(event)" id="overlay" class="overlay">
         </div>
         <div id="music">
-            <iframe class="music" src="https://www.youtube.com/embed/qCCodnXlsso" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            <iframe class="music" src="https://www.youtube.com/embed/ivCOrc1HWxI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            <iframe class="music" src="https://www.youtube.com/embed/y9ZHNhQA_Ac" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <iframe class="music" src="https://www.youtube.com/embed/qCCodnXlsso" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+            <iframe class="music" src="https://www.youtube.com/embed/ivCOrc1HWxI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+            <iframe class="music" src="https://www.youtube.com/embed/y9ZHNhQA_Ac" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
         </div>
     </body>
     <script>
@@ -197,12 +215,13 @@
         let tapTimeout;
         let lastTap = 0;
         let sounds = false;
+        let speed;
 
         const clickOverlay = () => {
             switch(phase)
             {
                 case 1:
-                    if (breaths >= 10)
+                    // if (breaths >= 10)
                         breathToRetention();
                     break;
                 case 2:
@@ -237,6 +256,14 @@
             document.getElementById("overlay").style.display = "block";            
             document.getElementById("phase").innerText = "Breathing...";
             sounds = document.getElementById("soundsCheckbox").checked;
+
+            if (document.getElementById("slow").checked)
+                speed = 2;
+            else if (document.getElementById("medium").checked)
+                speed = 1.5;
+            else
+                speed = 1;
+            
             
             if (sounds)
                 document.getElementById("gong").play();
@@ -248,6 +275,9 @@
         const finish = (e) => {
             e.preventDefault();
 
+            if (phase === 4)
+                return;
+
             if (phase === 1) {
                 clearTimeout(breathCb);
                 document.getElementById("bubble").style.display = "none";
@@ -258,12 +288,13 @@
             }
             else if (phase === 3) {
                 clearTimeout(recoveryCb);
-                document.getElementById("retention").style.display = "none";
+                document.getElementById("bubbleWrapper").style.display = "none";
             }
             
             phase = 4;
             document.getElementById("round").innerText = "Amazing breathing, here is your summary";
             document.getElementById("phase").innerText = "";
+            document.getElementById("phase").style.display = "none";
 
             const summary = document.getElementById("summary");
             summary.style.display = "flex";
@@ -286,7 +317,7 @@
             bubble.style.display = "none";
             document.getElementById("retention").style.display = "flex";
             bubble.style.transition = "none";
-            bubble.style.width = bubble.style.height = bubble.style.marginTop = bubble.style.marginLeft = "0";
+            bubble.style.width = bubble.style.height = bubble.style.marginTop = bubble.style.marginLeft = bubble.style.fontSize = "0";
             retention();
         }
 
@@ -303,13 +334,19 @@
             phase = 1;
             breaths = 1;
             breathEmpty = false;
-            document.getElementById("phase").innerText = "Breathing...";
-            const bubble = document.getElementById("bubble");
-            clearTimeout(retentionCb);
-            document.getElementById("retention").style.display = "none";
-            document.getElementById("bubble").style.display = "flex";
-            document.getElementById("round").innerText = "Round " + ++round;
-            breath();
+
+            if (sounds)
+                document.getElementById("gong").play();
+
+            setTimeout(() => {
+                document.getElementById("phase").innerText = "Breathing...";
+                const bubble = document.getElementById("bubble");
+                clearTimeout(retentionCb);
+                document.getElementById("retention").style.display = "none";
+                document.getElementById("bubble").style.display = "flex";
+                document.getElementById("round").innerText = "Round " + ++round;
+                breath();
+            }, 3000);
         }
 
         const retention = () => {
@@ -371,17 +408,15 @@
             if (breathEmpty)
                 bubble.innerText = breaths++;
 
-            bubble.style.transition = "all ease-in-out " + (breathEmpty ? "2s" : "1.3s");
+            bubble.style.transition = "all ease-in-out " + (breathEmpty ? (2 * speed) : (1.3 * speed)) + "s";
 
             breathCb = setTimeout(() => {
                 bubble.style.width = breathEmpty ? "160px" : "0";
                 bubble.style.height = breathEmpty ? "160px" : "0";
-                bubble.style.marginLeft = breathEmpty ? "-80px" : "0";
-                bubble.style.marginTop = breathEmpty ? "-80px" : "0";
                 bubble.style.fontSize = breathEmpty ? "40px" : "0";
             }, 0);
             
-            breathCb = setTimeout(breath, breathEmpty ? 2000 : 1300);
+            breathCb = setTimeout(breath, breathEmpty ? 2000 * speed : 1300 * speed);
         }
     </script>
 </html>
